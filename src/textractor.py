@@ -15,7 +15,8 @@ class Textractor:
                  textract_features: "list[TEXTRACT_FEATURES]",
                  insights: bool,
                  medical_insights=bool,
-                 translate=bool):
+                 translate=bool,
+                 output_path: str = None):
         self.s3_bucket = s3_bucket
         self.documents = documents
         self.region = region
@@ -23,6 +24,7 @@ class Textractor:
         self.insights = insights
         self.medical_insights = medical_insights
         self.translate = translate
+        self.output_path = output_path
 
     @staticmethod
     def get_document_list(document_path: str) -> "list[str]":
@@ -55,8 +57,12 @@ class Textractor:
             #Generate output files
             print("Generating output...")
             name, ext = FileHelper.getFileNameAndExtension(document)
-            opg = OutputGenerator(response, "{}-{}".format(name, ext),
-                                  self.textract_features)
+            if self.output_path:
+                filename = os.path.join(self.output_path,
+                                        "{}-{}".format(name, ext))
+            else:
+                filename = "{}-{}".format(name, ext)
+            opg = OutputGenerator(response, filename, self.textract_features)
             opg.run()
 
             if (self.insights or self.medical_insights or self.translate):
@@ -138,6 +144,9 @@ if __name__ == "__main__":
         help=
         "Target Language Code for Amazon Translate (https://docs.aws.amazon.com/translate/latest/dg/what-is.html)"
     )
+    parser.add_argument("--output-path",
+                        metavar='PATH_TO_OUTPUT',
+                        help="where to store the output files")
     args = parser.parse_args()
     if not args.text and not args.forms and not args.tables:
         parser.error("at least one of --text, --forms or --tables is required")
@@ -156,5 +165,6 @@ if __name__ == "__main__":
                             textract_features=textract_features,
                             insights=args.insights,
                             medical_insights=args.medical_insights,
-                            translate=args.translate)
+                            translate=args.translate,
+                            output_path=args.output_path)
     textractor.run()

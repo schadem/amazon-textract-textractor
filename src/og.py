@@ -1,4 +1,5 @@
 import json
+import os
 from tabulate import tabulate
 from helper import FileHelper
 from ta import TextAnalyzer, TextMedicalAnalyzer, TextTranslater
@@ -10,8 +11,10 @@ class OutputGenerator:
     def __init__(self, response, fileName, textract_features):
         self.response = response
         self.fileName = fileName
+        directory, _ = os.path.split(fileName)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
         self.textract_features = textract_features
-
         self.document = Document(self.response)
 
     def _outputWords(self, page, p):
